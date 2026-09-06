@@ -17,26 +17,27 @@
 <body>
 <div class="app">
   <div class="top"><div><div class="brand">CORTICAL</div><div class="sub">Agenda sencilla por voz</div></div><div class="date" id="dateLabel"></div></div>
-  <section class="panel syncbar"><div><strong>Microsoft 365</strong><div class="syncstate" id="syncState">Sin conectar · guardado local</div></div><div class="row" style="margin:0"><button class="btn blue" id="connectBtn">Conectar</button><button class="btn dark hidden" id="syncBtn">Sincronizar</button></div></section>
+  <section class="panel syncbar" id="settingsSection"><div><strong>Microsoft 365</strong><div class="syncstate" id="syncState">Sin conectar · guardado local</div></div><div class="row" style="margin:0"><button class="btn blue" id="connectBtn">Conectar</button><button class="btn dark hidden" id="syncBtn">Sincronizar</button></div></section>
 
   <section class="panel" id="corticalPanel">
     <h2>Panel Cortical</h2>
     <div class="row">
-      <button class="btn blue">🎙️ Nueva actividad</button>
-      <button class="btn dark">📅 Agenda</button>
-      <button class="btn dark">👥 Contactos</button>
-      <button class="btn dark">☎️ Llamadas</button>
-      <button class="btn dark">📝 Tareas</button>
-      <button class="btn dark">📌 Notas</button>
-      <button class="btn dark">⚙️ Configuración</button>
+      <button class="btn blue" id="navNew">🎙️ Nueva actividad</button>
+      <button class="btn dark" id="navAgenda">📅 Agenda</button>
+      <button class="btn dark" id="navContacts">👥 Contactos</button>
+      <button class="btn dark" id="navCalls">☎️ Llamadas</button>
+      <button class="btn dark" id="navTasks">📝 Tareas</button>
+      <button class="btn dark" id="navNotes">📌 Notas</button>
+      <button class="btn dark" id="navSettings">⚙️ Configuración</button>
     </div>
   </section>
 
   <div class="main-grid">
-    <section class="panel hero"><h1>Nueva actividad</h1><p>Pulsa una vez y habla de forma natural.</p><button class="mic" id="mic">🎙️</button><div class="state" id="state">Listo para escuchar</div><div class="live" id="liveText"></div><textarea id="transcript" placeholder='Ejemplo: "Mañana a las 10 llamar a Pedro para revisar contrato"'></textarea><div class="row"><button class="btn blue" id="interpret">Interpretar</button><button class="btn dark" id="clear">Limpiar</button></div><div class="notice" id="supportNote"></div></section>
+    <section class="panel hero" id="voiceSection"><h1>Nueva actividad</h1><p>Pulsa una vez y habla de forma natural.</p><button class="mic" id="mic">🎙️</button><div class="state" id="state">Listo para escuchar</div><div class="live" id="liveText"></div><textarea id="transcript" placeholder='Ejemplo: "Mañana a las 10 llamar a Pedro para revisar contrato"'></textarea><div class="row"><button class="btn blue" id="interpret">Interpretar</button><button class="btn dark" id="clear">Limpiar</button></div><div class="notice" id="supportNote"></div></section>
     <section class="panel hidden" id="detected"><h2>He entendido</h2><div class="grid"><div class="label">Fecha</div><div class="val" id="vDate"></div><div class="label">Hora</div><div class="val" id="vTime"></div><div class="label">Tipo</div><div class="val" id="vType"></div><div class="label">Asunto</div><div class="val" id="vSubject"></div><div class="label">Persona</div><div class="val" id="vPerson"></div><div class="label">Teléfono</div><div class="val" id="vPhone"></div></div><div class="row"><button class="btn primary" id="save">✓ Guardar</button><button class="btn dark" id="modify">Modificar</button><button class="btn red" id="cancel">Cancelar</button></div></section>
   </div>
-  <section class="panel"><h2>Hoy</h2><div id="todayList"></div></section>
+  <section class="panel" id="agendaSection"><h2>Hoy</h2><div id="todayList"></div></section>
+  <section class="panel hidden" id="moduleSection"><h2 id="moduleTitle"></h2><div id="moduleList"></div></section>
 </div>
 <script type="module">
 import { PublicClientApplication, InteractionRequiredAuthError } from 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@5.17.3/+esm';
@@ -83,6 +84,33 @@ async function graph(path,opts={}){const t=await token();if(!t)return null;const
 async function readRemote(){try{await graph('/me/drive/special/approot');const r=await graph(`/me/drive/special/approot:/${FILE_NAME}:/content`);if(!r)return[];return await r.json()}catch(e){if(String(e.message).startsWith('404'))return[];throw e}}
 async function writeRemote(items){await graph('/me/drive/special/approot');await graph(`/me/drive/special/approot:/${FILE_NAME}:/content`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items,null,2)})}
 async function syncNow(){if(!msal.getActiveAccount()){syncState.textContent='Conecta Microsoft 365 primero';return}syncState.textContent='Sincronizando…';try{const remote=await readRemote(),all=merge(load(),remote);store(all);await writeRemote(all);renderToday();syncState.textContent=`Sincronizado · ${new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`;}catch(e){console.error(e);syncState.textContent='Error de sincronización · los datos siguen guardados localmente';}}
+
+function scrollToId(id){const e=q(id);if(e)e.scrollIntoView({behavior:'smooth',block:'start'})}
+function renderModule(kind){
+  const section=q('moduleSection'),title=q('moduleTitle'),box=q('moduleList'),arr=load();
+  section.classList.remove('hidden');box.innerHTML='';
+  if(kind==='Contactos'){
+    title.textContent='Contactos';
+    const seen=new Map();
+    arr.forEach(x=>{const person=(x.person||'').trim(),phone=(x.phone||'').trim();if(person&&person!=='—'||phone&&phone!=='—'){const key=`${person}|${phone}`;if(!seen.has(key))seen.set(key,{person:person||'—',phone:phone||'—'})}});
+    const contacts=[...seen.values()];
+    if(!contacts.length){box.innerHTML='<div class="empty">Todavía no hay contactos guardados.</div>';scrollToId('moduleSection');return}
+    contacts.forEach(c=>{const e=document.createElement('div');e.className='today-item';e.innerHTML='<div class="time">👤</div><div><div class="title"></div><div class="meta"></div></div><div class="badge">Contacto</div>';e.querySelector('.title').textContent=c.person;e.querySelector('.meta').textContent=c.phone;box.appendChild(e)});
+  }else{
+    const typeMap={Llamadas:'Llamada',Tareas:'Tarea',Notas:'Nota'};title.textContent=kind;
+    const items=arr.filter(x=>x.type===typeMap[kind]).sort((a,b)=>`${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+    if(!items.length){box.innerHTML=`<div class="empty">No hay ${kind.toLowerCase()} guardadas.</div>`;scrollToId('moduleSection');return}
+    items.forEach(x=>{const e=document.createElement('div');e.className='today-item';e.innerHTML=`<div class="time">${x.time||'—'}</div><div><div class="title"></div><div class="meta"></div></div><div class="badge">${x.type}</div>`;e.querySelector('.title').textContent=x.subject;e.querySelector('.meta').textContent=[x.dateText||x.date,x.person&&x.person!=='—'?x.person:'',x.phone&&x.phone!=='—'?x.phone:''].filter(Boolean).join(' · ');box.appendChild(e)});
+  }
+  scrollToId('moduleSection');
+}
+q('navNew').onclick=()=>{scrollToId('voiceSection');setTimeout(()=>transcript.focus(),350)};
+q('navAgenda').onclick=()=>{q('moduleSection').classList.add('hidden');scrollToId('agendaSection')};
+q('navContacts').onclick=()=>renderModule('Contactos');
+q('navCalls').onclick=()=>renderModule('Llamadas');
+q('navTasks').onclick=()=>renderModule('Tareas');
+q('navNotes').onclick=()=>renderModule('Notas');
+q('navSettings').onclick=()=>scrollToId('settingsSection');
 
 connectBtn.onclick=async()=>{if(msal.getActiveAccount()){await syncNow();return}await msal.loginRedirect({scopes:SCOPES,prompt:'select_account'});};
 syncBtn.onclick=syncNow;
