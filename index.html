@@ -18,6 +18,20 @@
 <div class="app">
   <div class="top"><div><div class="brand">CORTICAL</div><div class="sub">Agenda sencilla por voz</div></div><div class="date" id="dateLabel"></div></div>
   <section class="panel syncbar"><div><strong>Microsoft 365</strong><div class="syncstate" id="syncState">Sin conectar · guardado local</div></div><div class="row" style="margin:0"><button class="btn blue" id="connectBtn">Conectar</button><button class="btn dark hidden" id="syncBtn">Sincronizar</button></div></section>
+
+  <section class="panel" id="corticalPanel">
+    <h2>Panel Cortical</h2>
+    <div class="row">
+      <button class="btn blue">🎙️ Nueva actividad</button>
+      <button class="btn dark">📅 Agenda</button>
+      <button class="btn dark">👥 Contactos</button>
+      <button class="btn dark">☎️ Llamadas</button>
+      <button class="btn dark">📝 Tareas</button>
+      <button class="btn dark">📌 Notas</button>
+      <button class="btn dark">⚙️ Configuración</button>
+    </div>
+  </section>
+
   <div class="main-grid">
     <section class="panel hero"><h1>Nueva actividad</h1><p>Pulsa una vez y habla de forma natural.</p><button class="mic" id="mic">🎙️</button><div class="state" id="state">Listo para escuchar</div><div class="live" id="liveText"></div><textarea id="transcript" placeholder='Ejemplo: "Mañana a las 10 llamar a Pedro para revisar contrato"'></textarea><div class="row"><button class="btn blue" id="interpret">Interpretar</button><button class="btn dark" id="clear">Limpiar</button></div><div class="notice" id="supportNote"></div></section>
     <section class="panel hidden" id="detected"><h2>He entendido</h2><div class="grid"><div class="label">Fecha</div><div class="val" id="vDate"></div><div class="label">Hora</div><div class="val" id="vTime"></div><div class="label">Tipo</div><div class="val" id="vType"></div><div class="label">Asunto</div><div class="val" id="vSubject"></div><div class="label">Persona</div><div class="val" id="vPerson"></div><div class="label">Teléfono</div><div class="val" id="vPhone"></div></div><div class="row"><button class="btn primary" id="save">✓ Guardar</button><button class="btn dark" id="modify">Modificar</button><button class="btn red" id="cancel">Cancelar</button></div></section>
