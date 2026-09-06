@@ -1,0 +1,11 @@
+{
+  "name": "Cortical Agenda",
+  "short_name": "Cortical",
+  "description": "Agenda diaria sencilla con entrada principal por voz.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#08111f",
+  "orientation": "any"
+}
